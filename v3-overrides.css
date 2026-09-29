@@ -1,0 +1,176 @@
+/* Version 3 usability refinements. Version 2 styles remain intact underneath. */
+.progress-wrap {
+  padding: 14px 16px;
+  border: 1px solid rgba(47, 93, 80, 0.16);
+  border-radius: 16px;
+  background: #f7faf8;
+}
+
+.progress-topline {
+  margin-bottom: 9px;
+  color: var(--ink);
+}
+
+#stepLabel {
+  color: var(--brand-dark);
+}
+
+#stepName {
+  font-weight: 900;
+}
+
+.progress-track {
+  height: 14px;
+  border: 1px solid #dfe5e1;
+  background: #edf0ed;
+}
+
+.menu-card,
+.choice-card {
+  border-color: #d9dfdb;
+}
+
+.menu-card[aria-pressed="true"],
+.choice-card[aria-pressed="true"] {
+  border-width: 3px;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(47, 93, 80, 0.12);
+}
+
+.choice-card {
+  padding-right: 112px;
+}
+
+.choice-card[aria-pressed="true"]::after,
+.menu-card[aria-pressed="true"]::after {
+  content: "✓ 선택함";
+  letter-spacing: -0.01em;
+}
+
+.status-message {
+  gap: 9px;
+  border: 1px solid transparent;
+}
+
+.status-message::before {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.status-message[data-status="needed"] {
+  color: #6b4e16;
+  background: var(--accent-soft);
+  border-color: rgba(244, 185, 66, 0.36);
+}
+
+.status-message[data-status="needed"]::before {
+  content: "!";
+  color: #fff;
+  background: #9a6f14;
+}
+
+.status-message[data-status="ready"] {
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  border-color: rgba(47, 93, 80, 0.18);
+}
+
+.status-message[data-status="ready"]::before {
+  content: "✓";
+  color: #fff;
+  background: var(--brand);
+}
+
+.edit-return-note {
+  margin: 0 0 18px;
+  padding: 13px 15px;
+  border: 2px solid rgba(47, 93, 80, 0.18);
+  border-radius: 14px;
+  color: var(--brand-dark);
+  background: #f2f8f5;
+  font-weight: 850;
+}
+
+.review-row {
+  grid-template-columns: 140px minmax(0, 1fr) auto;
+  gap: 16px;
+  padding-block: 17px;
+}
+
+.review-value {
+  line-height: 1.55;
+}
+
+.edit-button {
+  min-height: 44px;
+  min-width: 68px;
+  border: 1px solid rgba(47, 93, 80, 0.18);
+}
+
+.primary-button:not(:disabled) {
+  box-shadow: 0 9px 20px rgba(47, 93, 80, 0.22);
+}
+
+.primary-button:disabled {
+  border: 1px solid #c9ceca;
+  color: #777f7b;
+  background: #e3e5e3;
+}
+
+@media (max-width: 1040px) {
+  .progress-wrap {
+    margin-bottom: 22px;
+  }
+
+  .order-summary {
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 760px) {
+  .choice-card {
+    padding-right: 110px;
+  }
+
+  .review-row {
+    grid-template-columns: 118px minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .progress-wrap {
+    padding: 12px 13px;
+  }
+
+  .progress-topline {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .choice-card {
+    padding-right: 16px;
+    padding-top: 46px;
+  }
+
+  .choice-card[aria-pressed="true"]::after {
+    top: 10px;
+    left: 16px;
+    right: auto;
+  }
+
+  .review-row {
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+  }
+
+  .review-label {
+    grid-column: 1 / -1;
+  }
+}
