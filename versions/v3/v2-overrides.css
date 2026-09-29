@@ -1,0 +1,83 @@
+/* Version 2 usability refinements layered on top of the Version 1 visual system. */
+.status-message {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+}
+
+.menu-card,
+.choice-card {
+  position: relative;
+}
+
+.menu-card[aria-pressed="true"]::after,
+.choice-card[aria-pressed="true"]::after {
+  content: "✓ 선택함";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.menu-card[aria-pressed="true"] .menu-tag {
+  visibility: hidden;
+}
+
+.primary-button:not(:disabled) {
+  outline: 3px solid rgba(47, 93, 80, 0.12);
+  outline-offset: 2px;
+}
+
+.review-row {
+  min-height: 64px;
+}
+
+.edit-button {
+  min-height: 40px;
+  min-width: 58px;
+}
+
+@media (max-width: 1040px) {
+  .order-summary {
+    border-width: 2px;
+  }
+
+  .summary-heading::after {
+    content: "지금까지 고른 내용을 여기서 확인해요";
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1040px) {
+  .practice-panel {
+    min-height: auto;
+  }
+
+  .menu-card {
+    min-height: 185px;
+  }
+
+  .choice-card {
+    min-height: 100px;
+  }
+
+  .secondary-button,
+  .primary-button,
+  .start-button {
+    min-height: 58px;
+  }
+}
