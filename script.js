@@ -34,7 +34,8 @@ const state = {
   size: null,
   quantity: 1,
   place: null,
-  payment: null
+  payment: null,
+  returnToReview: false
 };
 
 const refs = {
@@ -118,7 +119,7 @@ function render() {
   setHeading(stepMeta[state.step]);
   refs.backButton.disabled = false;
   refs.backButton.innerHTML = '<span aria-hidden="true">←</span> 이전';
-  refs.nextButton.textContent = state.step === 4 ? "주문하기" : "다음 →";
+  refs.nextButton.textContent = state.step === 4 ? "주문 완료하기" : (state.returnToReview && canReturnToReviewAfter(state.step) ? "주문 확인으로 →" : "다음 →");
 
   if (state.step === 1) renderMenuStep();
   if (state.step === 2) renderOptionStep();
@@ -332,6 +333,7 @@ function renderReviewStep() {
     <div class="practice-script"><strong>🗣️ 이렇게 말해 볼 수 있어요</strong><p class="practice-line">“${getOrderPhrase()}”</p></div>`;
   refs.screenContent.querySelectorAll("[data-edit-step]").forEach((button) => {
     button.addEventListener("click", () => {
+      state.returnToReview = true;
       state.step = Number(button.dataset.editStep);
       render();
       focusScreenTitle();
@@ -371,11 +373,30 @@ function isStepComplete(step) {
   if (step === 4) return isStepComplete(3);
   return false;
 }
+function canReturnToReviewAfter(step) {
+  if (!state.returnToReview || step >= 4) return false;
+  if (step === 1) return isStepComplete(2) && isStepComplete(3);
+  if (step === 2) return isStepComplete(3);
+  return step === 3;
+}
+function getMissingInstruction() {
+  if (state.step === 1 && !state.drinkId) return "음료를 하나 고르면 다음으로 갈 수 있어요.";
+  if (state.step === 2 && !state.temperature) return "먼저 음료 온도를 골라 주세요.";
+  if (state.step === 2 && !state.size) return "음료 크기를 고르면 다음으로 갈 수 있어요.";
+  if (state.step === 3 && !state.place) return "매장에서 먹을지, 가지고 갈지 골라 주세요.";
+  if (state.step === 3 && !state.payment) return "계산 방법을 고르면 다음으로 갈 수 있어요.";
+  return "";
+}
 function updateNextButton() {
   const complete = isStepComplete(state.step);
   refs.nextButton.disabled = !complete;
-  if (!complete) refs.nextButton.setAttribute("aria-describedby", "statusMessage");
-  else refs.nextButton.removeAttribute("aria-describedby");
+  if (!complete) {
+    refs.nextButton.setAttribute("aria-describedby", "statusMessage");
+    refs.statusMessage.textContent = getMissingInstruction();
+  } else {
+    refs.nextButton.removeAttribute("aria-describedby");
+    if (!refs.statusMessage.textContent) refs.statusMessage.textContent = "선택을 마쳤어요. 다음 버튼을 눌러 주세요.";
+  }
 }
 function refreshPressedStates(dataAttribute, selectedValue) {
   refs.screenContent.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
@@ -418,6 +439,7 @@ function resetPractice() {
   state.quantity = 1;
   state.place = null;
   state.payment = null;
+  state.returnToReview = false;
   closeResetModal();
   render();
   focusScreenTitle();
@@ -456,7 +478,12 @@ refs.nextButton.addEventListener("click", () => {
     return;
   }
   if (state.step < 4) {
-    state.step += 1;
+    if (canReturnToReviewAfter(state.step)) {
+      state.step = 4;
+      state.returnToReview = false;
+    } else {
+      state.step += 1;
+    }
     render();
     focusScreenTitle();
     return;
@@ -466,6 +493,7 @@ refs.nextButton.addEventListener("click", () => {
   focusScreenTitle();
 });
 refs.backButton.addEventListener("click", () => {
+  state.returnToReview = false;
   if (state.step > 1) state.step -= 1;
   else state.stage = "welcome";
   render();
