@@ -389,6 +389,7 @@ function getMissingInstruction() {
 }
 function updateNextButton() {
   const complete = isStepComplete(state.step);
+  refs.nextButton.textContent = state.step === 4 ? "주문 완료하기" : (canReturnToReviewAfter(state.step) ? "주문 확인으로 →" : "다음 →");
   refs.nextButton.disabled = !complete;
   if (!complete) {
     refs.nextButton.setAttribute("aria-describedby", "statusMessage");
