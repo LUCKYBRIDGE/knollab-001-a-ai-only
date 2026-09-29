@@ -13,17 +13,15 @@ const temperatureOptions = {
   hot: { label: "따뜻하게", short: "따뜻한", emoji: "♨️", sub: "HOT" },
   ice: { label: "차갑게", short: "아이스", emoji: "🧊", sub: "ICE" }
 };
+
 const sizeOptions = {
   regular: { label: "보통 크기", short: "보통", emoji: "🥤", sub: "REGULAR", extra: 0 },
   large: { label: "큰 크기", short: "큰", emoji: "🥤", sub: "LARGE · +500원", extra: 500 }
 };
+
 const placeOptions = {
   here: { label: "매장에서 먹기", short: "매장", emoji: "🪑", sub: "카페 안에서 마셔요" },
   togo: { label: "가지고 가기", short: "포장", emoji: "🛍️", sub: "들고 나가요" }
-};
-const paymentOptions = {
-  card: { label: "카드", emoji: "💳", sub: "카드를 단말기에 대요" },
-  cash: { label: "현금", emoji: "💵", sub: "지폐나 동전을 내요" }
 };
 
 const state = {
@@ -33,8 +31,7 @@ const state = {
   temperature: null,
   size: null,
   quantity: 1,
-  place: null,
-  payment: null
+  place: null
 };
 
 const refs = {
@@ -60,37 +57,75 @@ const refs = {
 };
 
 const stepMeta = {
-  1: { name: "음료 고르기", eyebrow: "1단계 · 메뉴 보기", title: "마시고 싶은 음료를 골라요", help: "음료 카드를 한 번 눌러 선택하세요. 고른 카드는 초록색으로 표시돼요." },
-  2: { name: "옵션 고르기", eyebrow: "2단계 · 원하는 방법 고르기", title: "음료를 어떻게 받을까요?", help: "온도와 크기를 차례로 골라요. 필요한 경우 수량도 바꿀 수 있어요." },
-  3: { name: "주문 방법", eyebrow: "3단계 · 카페에서 말하기", title: "어디서 마시고, 어떻게 계산할까요?", help: "매장 또는 포장을 고르고, 계산 방법을 골라요." },
-  4: { name: "주문 확인", eyebrow: "4단계 · 마지막 확인", title: "주문이 맞는지 확인해요", help: "잘못 고른 것이 있으면 ‘수정’ 버튼으로 돌아가서 바꿀 수 있어요." }
+  1: {
+    name: "음료 고르기",
+    eyebrow: "1단계 · 메뉴 보기",
+    title: "마시고 싶은 음료를 하나 골라요",
+    help: "큰 음료 카드를 한 번 누르세요. 내가 고른 카드는 초록색으로 바뀌어요."
+  },
+  2: {
+    name: "추가 선택",
+    eyebrow: "2단계 · 주문 옵션 고르기",
+    title: "음료를 어떻게 받을지 골라요",
+    help: "온도와 크기를 고르고, 필요한 경우 몇 잔인지 바꿔요."
+  },
+  3: {
+    name: "매장·포장",
+    eyebrow: "3단계 · 이용 방법 고르기",
+    title: "매장에서 마실까요, 가지고 갈까요?",
+    help: "실제 카페에서 자주 듣는 질문이에요. 두 가지 중 하나를 골라요."
+  },
+  4: {
+    name: "주문 확인",
+    eyebrow: "4단계 · 마지막 확인",
+    title: "내가 고른 주문이 맞는지 확인해요",
+    help: "바꾸고 싶은 내용이 있으면 ‘수정’ 버튼을 눌러 해당 단계로 돌아갈 수 있어요."
+  }
+};
+
+const nextLabels = {
+  1: "추가 선택으로 →",
+  2: "매장·포장 선택으로 →",
+  3: "주문 확인하기 →",
+  4: "주문 완료하기"
+};
+
+const incompleteMessages = {
+  1: "먼저 음료를 하나 고르면 다음 단계로 갈 수 있어요.",
+  2: "온도와 크기를 모두 고르면 다음 단계로 갈 수 있어요.",
+  3: "매장 또는 포장을 고르면 주문을 확인할 수 있어요.",
+  4: "주문 내용을 확인한 뒤 주문 완료하기를 눌러요."
 };
 
 function getDrink() {
   return menuItems.find((item) => item.id === state.drinkId) || null;
 }
+
 function formatPrice(value) {
   return `${value.toLocaleString("ko-KR")}원`;
 }
+
 function getUnitPrice() {
   const drink = getDrink();
   if (!drink) return 0;
   const sizeExtra = state.size ? sizeOptions[state.size].extra : 0;
   return drink.basePrice + sizeExtra;
 }
+
 function getTotalPrice() {
   return getUnitPrice() * state.quantity;
 }
+
 function getOrderPhrase() {
   const drink = getDrink();
-  if (!drink || !state.temperature || !state.size || !state.place || !state.payment) return "";
-  const temp = temperatureOptions[state.temperature].short;
+  if (!drink || !state.temperature || !state.size || !state.place) return "";
+  const temperature = temperatureOptions[state.temperature].short;
   const size = sizeOptions[state.size].short;
-  const place = state.place === "here" ? "매장에서 먹을게요" : "포장해 주세요";
-  const payment = state.payment === "card" ? "카드로 계산할게요" : "현금으로 계산할게요";
   const count = state.quantity === 1 ? "한 잔" : `${state.quantity}잔`;
-  return `안녕하세요. ${temp} ${drink.name} ${size} 크기로 ${count} 주세요. ${place}. ${payment}.`;
+  const place = state.place === "here" ? "매장에서 마실게요" : "포장해 주세요";
+  return `안녕하세요. ${temperature} ${drink.name} ${size} 크기로 ${count} 주세요. ${place}.`;
 }
+
 function setHeading(meta) {
   refs.eyebrow.textContent = meta.eyebrow;
   refs.screenTitle.textContent = meta.title;
@@ -99,10 +134,12 @@ function setHeading(meta) {
 
 function render() {
   refs.statusMessage.textContent = "";
+
   if (state.stage === "welcome") {
     renderWelcome();
     return;
   }
+
   if (state.stage === "complete") {
     renderComplete();
     return;
@@ -118,11 +155,11 @@ function render() {
   setHeading(stepMeta[state.step]);
   refs.backButton.disabled = false;
   refs.backButton.innerHTML = '<span aria-hidden="true">←</span> 이전';
-  refs.nextButton.textContent = state.step === 4 ? "주문하기" : "다음 →";
+  refs.nextButton.textContent = nextLabels[state.step];
 
   if (state.step === 1) renderMenuStep();
   if (state.step === 2) renderOptionStep();
-  if (state.step === 3) renderMethodStep();
+  if (state.step === 3) renderPlaceStep();
   if (state.step === 4) renderReviewStep();
 
   updateSummary();
@@ -134,16 +171,23 @@ function renderWelcome() {
   refs.orderSummary.hidden = true;
   refs.resetButton.hidden = true;
   refs.navigationRow.hidden = true;
-  setHeading({ eyebrow: "카페에 왔어요", title: "주문을 연습해 볼까요?", help: "화면에 보이는 큰 버튼을 하나씩 눌러 주문을 완성해 보세요." });
+
+  setHeading({
+    eyebrow: "카페에 왔어요",
+    title: "카페 주문을 처음부터 끝까지 연습해요",
+    help: "화면에 보이는 큰 버튼을 하나씩 누르면 돼요. 잘못 골라도 뒤로 가서 바꿀 수 있어요."
+  });
+
   refs.screenContent.innerHTML = `
     <div class="welcome-card">
       <div class="welcome-copy">
-        <h3>혼자서 천천히 해도 괜찮아요.</h3>
-        <p>한 화면에서 한 가지씩 고르면 돼요. 잘못 골라도 언제든 이전으로 돌아가 바꿀 수 있어요.</p>
+        <h3>한 번에 한 가지씩 고르면 돼요.</h3>
+        <p>실제 카페처럼 음료를 고르고, 옵션을 정하고, 매장 또는 포장을 고른 뒤 주문을 확인해요.</p>
         <div class="practice-points" aria-label="연습 순서">
           <div class="practice-point"><span class="point-number">1</span><span>마실 음료 고르기</span></div>
           <div class="practice-point"><span class="point-number">2</span><span>온도와 크기 고르기</span></div>
-          <div class="practice-point"><span class="point-number">3</span><span>매장·포장과 계산 방법 고르기</span></div>
+          <div class="practice-point"><span class="point-number">3</span><span>매장 또는 포장 고르기</span></div>
+          <div class="practice-point"><span class="point-number">4</span><span>주문 확인하고 완료하기</span></div>
         </div>
         <button class="start-button" id="startButton" type="button">연습 시작하기 <span aria-hidden="true">→</span></button>
       </div>
@@ -151,6 +195,7 @@ function renderWelcome() {
         <div class="counter-scene"><div class="big-emoji">🧑‍🍳☕</div><p>“무엇을 드릴까요?”</p></div>
       </div>
     </div>`;
+
   document.getElementById("startButton").addEventListener("click", () => {
     state.stage = "ordering";
     state.step = 1;
@@ -170,20 +215,20 @@ function renderMenuStep() {
           <span class="menu-price">${formatPrice(item.basePrice)}</span>
         </button>`).join("")}
     </div>
-    <p class="step-note">💡 주문 연습에서는 한 종류의 음료를 골라 연습해요.</p>`;
+    <p class="step-note">💡 한 번에 한 종류의 음료를 골라 주문 연습을 해요.</p>`;
 
   refs.screenContent.querySelectorAll("[data-drink-id]").forEach((button) => {
     button.addEventListener("click", () => {
-      const newDrinkId = button.dataset.drinkId;
-      if (state.drinkId !== newDrinkId) {
-        state.drinkId = newDrinkId;
+      const nextDrinkId = button.dataset.drinkId;
+      if (state.drinkId !== nextDrinkId) {
+        state.drinkId = nextDrinkId;
         state.temperature = null;
         state.size = null;
       }
       refreshPressedStates("data-drink-id", state.drinkId);
       updateSummary();
       updateNextButton();
-      announce(`${getDrink().name}을 선택했어요.`);
+      announce(`${getDrink().name}을 선택했어요. 아래의 다음 버튼을 눌러도 돼요.`);
     });
   });
 }
@@ -195,9 +240,12 @@ function renderOptionStep() {
     render();
     return;
   }
-  if (drink.temperatures.length === 1 && !state.temperature) state.temperature = drink.temperatures[0];
 
-  const tempButtons = drink.temperatures.map((id) => {
+  if (drink.temperatures.length === 1 && !state.temperature) {
+    state.temperature = drink.temperatures[0];
+  }
+
+  const temperatureButtons = drink.temperatures.map((id) => {
     const option = temperatureOptions[id];
     return `
       <button class="choice-card" type="button" data-temperature="${id}" aria-pressed="${state.temperature === id}">
@@ -209,8 +257,8 @@ function renderOptionStep() {
   refs.screenContent.innerHTML = `
     <section class="selection-section" aria-labelledby="temperatureTitle">
       <h3 class="option-title" id="temperatureTitle">1. 온도를 골라요</h3>
-      ${drink.temperatures.length === 1 ? '<p class="option-note">이 음료는 차갑게만 주문할 수 있어요.</p>' : ''}
-      <div class="choice-grid" role="group" aria-label="음료 온도">${tempButtons}</div>
+      ${drink.temperatures.length === 1 ? '<p class="option-note">이 음료는 차갑게만 주문할 수 있어서 자동으로 선택했어요.</p>' : ''}
+      <div class="choice-grid" role="group" aria-label="음료 온도">${temperatureButtons}</div>
     </section>
     <section class="selection-section" aria-labelledby="sizeTitle">
       <h3 class="option-title" id="sizeTitle">2. 크기를 골라요</h3>
@@ -225,7 +273,7 @@ function renderOptionStep() {
     <section class="selection-section" aria-labelledby="quantityTitle">
       <h3 class="option-title" id="quantityTitle">3. 몇 잔인지 확인해요</h3>
       <div class="quantity-box">
-        <div class="quantity-copy"><strong>음료 수량</strong><span>1잔부터 3잔까지 연습할 수 있어요.</span></div>
+        <div class="quantity-copy"><strong>음료 수량</strong><span>기본은 1잔이에요. 필요하면 1잔부터 3잔까지 바꿀 수 있어요.</span></div>
         <div class="quantity-controls" aria-label="음료 수량 조절">
           <button class="quantity-button" id="decreaseQuantity" type="button" aria-label="수량 1 줄이기">−</button>
           <output class="quantity-value" id="quantityValue" aria-live="polite">${state.quantity}</output>
@@ -243,6 +291,7 @@ function renderOptionStep() {
       announce(`${temperatureOptions[state.temperature].label}를 선택했어요.`);
     });
   });
+
   refs.screenContent.querySelectorAll("[data-size]").forEach((button) => {
     button.addEventListener("click", () => {
       state.size = button.dataset.size;
@@ -256,22 +305,35 @@ function renderOptionStep() {
   const decrease = document.getElementById("decreaseQuantity");
   const increase = document.getElementById("increaseQuantity");
   const quantityValue = document.getElementById("quantityValue");
+
   const refreshQuantity = () => {
     quantityValue.value = state.quantity;
     quantityValue.textContent = state.quantity;
     decrease.disabled = state.quantity <= 1;
     increase.disabled = state.quantity >= 3;
     updateSummary();
+    announce(`수량은 ${state.quantity}잔이에요.`);
   };
-  decrease.addEventListener("click", () => { if (state.quantity > 1) state.quantity -= 1; refreshQuantity(); });
-  increase.addEventListener("click", () => { if (state.quantity < 3) state.quantity += 1; refreshQuantity(); });
-  refreshQuantity();
+
+  decrease.addEventListener("click", () => {
+    if (state.quantity > 1) state.quantity -= 1;
+    refreshQuantity();
+  });
+
+  increase.addEventListener("click", () => {
+    if (state.quantity < 3) state.quantity += 1;
+    refreshQuantity();
+  });
+
+  quantityValue.value = state.quantity;
+  decrease.disabled = state.quantity <= 1;
+  increase.disabled = state.quantity >= 3;
 }
 
-function renderMethodStep() {
+function renderPlaceStep() {
   refs.screenContent.innerHTML = `
     <section class="selection-section" aria-labelledby="placeTitle">
-      <h3 class="option-title" id="placeTitle">1. 어디서 마실까요?</h3>
+      <h3 class="option-title" id="placeTitle">어디서 마실까요?</h3>
       <div class="choice-grid" role="group" aria-label="이용 방법">
         ${Object.entries(placeOptions).map(([id, option]) => `
           <button class="choice-card" type="button" data-place="${id}" aria-pressed="${state.place === id}">
@@ -280,17 +342,7 @@ function renderMethodStep() {
           </button>`).join("")}
       </div>
     </section>
-    <section class="selection-section" aria-labelledby="paymentTitle">
-      <h3 class="option-title" id="paymentTitle">2. 어떻게 계산할까요?</h3>
-      <div class="choice-grid" role="group" aria-label="결제 방법">
-        ${Object.entries(paymentOptions).map(([id, option]) => `
-          <button class="choice-card" type="button" data-payment="${id}" aria-pressed="${state.payment === id}">
-            <span class="choice-icon" aria-hidden="true">${option.emoji}</span>
-            <span class="choice-copy"><span class="choice-label">${option.label}</span><span class="choice-sub">${option.sub}</span></span>
-          </button>`).join("")}
-      </div>
-    </section>
-    <p class="step-note">💡 실제 카페에서는 직원이 “드시고 가세요?” 또는 “결제는 어떻게 하세요?”라고 물어볼 수 있어요.</p>`;
+    <p class="step-note">💡 직원이 “드시고 가세요?”라고 물으면 매장 또는 포장 중 하나를 말하면 돼요.</p>`;
 
   refs.screenContent.querySelectorAll("[data-place]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -298,16 +350,7 @@ function renderMethodStep() {
       refreshPressedStates("data-place", state.place);
       updateSummary();
       updateNextButton();
-      announce(`${placeOptions[state.place].label}를 선택했어요.`);
-    });
-  });
-  refs.screenContent.querySelectorAll("[data-payment]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.payment = button.dataset.payment;
-      refreshPressedStates("data-payment", state.payment);
-      updateSummary();
-      updateNextButton();
-      announce(`${paymentOptions[state.payment].label} 결제를 선택했어요.`);
+      announce(`${placeOptions[state.place].label}를 선택했어요. 이제 주문 내용을 확인할 수 있어요.`);
     });
   });
 }
@@ -318,18 +361,21 @@ function renderReviewStep() {
     render();
     return;
   }
+
   const drink = getDrink();
   const drinkText = `${temperatureOptions[state.temperature].short} ${drink.name}`;
   const optionText = `${sizeOptions[state.size].label} · ${state.quantity}잔`;
+
   refs.screenContent.innerHTML = `
     <div class="review-card">
       ${reviewRow("음료", drinkText, 1)}
       ${reviewRow("크기·수량", optionText, 2)}
-      ${reviewRow("이용 방법", placeOptions[state.place].label, 3)}
-      ${reviewRow("결제", paymentOptions[state.payment].label, 3)}
+      ${reviewRow("매장·포장", placeOptions[state.place].label, 3)}
     </div>
     <div class="total-row"><span>총 금액</span><span class="total-price">${formatPrice(getTotalPrice())}</span></div>
-    <div class="practice-script"><strong>🗣️ 이렇게 말해 볼 수 있어요</strong><p class="practice-line">“${getOrderPhrase()}”</p></div>`;
+    <div class="practice-script"><strong>🗣️ 카페에서 이렇게 말해 볼 수 있어요</strong><p class="practice-line">“${getOrderPhrase()}”</p></div>
+    <p class="step-note">✓ 주문이 모두 맞으면 아래의 ‘주문 완료하기’를 눌러요.</p>`;
+
   refs.screenContent.querySelectorAll("[data-edit-step]").forEach((button) => {
     button.addEventListener("click", () => {
       state.step = Number(button.dataset.editStep);
@@ -338,6 +384,7 @@ function renderReviewStep() {
     });
   });
 }
+
 function reviewRow(label, value, step) {
   return `<div class="review-row"><span class="review-label">${label}</span><span class="review-value">${value}</span><button class="edit-button" type="button" data-edit-step="${step}" aria-label="${label} 수정하기">수정</button></div>`;
 }
@@ -347,19 +394,26 @@ function renderComplete() {
   refs.orderSummary.hidden = true;
   refs.resetButton.hidden = true;
   refs.navigationRow.hidden = true;
-  setHeading({ eyebrow: "주문 완료", title: "주문 연습을 끝냈어요!", help: "방금 고른 내용을 실제 카페에서도 천천히 말해 보세요." });
+
+  setHeading({
+    eyebrow: "주문 완료",
+    title: "주문이 완료되었어요",
+    help: "처음부터 다시 연습하고 싶으면 아래의 ‘다시 연습하기’를 누르세요."
+  });
+
   refs.screenContent.innerHTML = `
     <div class="complete-wrap"><div class="complete-card">
       <div class="complete-icon" aria-hidden="true">✓</div>
-      <h3>잘 주문했어요.</h3>
-      <p class="complete-sub">직원이 음료를 준비하는 동안 기다리면 돼요.</p>
-      <p class="complete-total">결제 금액 · ${formatPrice(getTotalPrice())}</p>
-      <div class="tip-box"><strong>내가 한 주문</strong><p>“${getOrderPhrase()}”</p></div>
+      <h3>카페 주문 연습을 끝냈어요.</h3>
+      <p class="complete-sub">실제 카페에서도 방금 순서대로 천천히 말하면 돼요.</p>
+      <p class="complete-total">주문 금액 · ${formatPrice(getTotalPrice())}</p>
+      <div class="tip-box"><strong>내가 연습한 주문</strong><p>“${getOrderPhrase()}”</p></div>
       <div class="complete-actions">
         <button class="listen-button" id="listenOrderButton" type="button"><span aria-hidden="true">🔊</span> 주문 문장 듣기</button>
-        <button class="start-button" id="practiceAgainButton" type="button">한 번 더 연습하기</button>
+        <button class="start-button" id="practiceAgainButton" type="button">다시 연습하기</button>
       </div>
     </div></div>`;
+
   document.getElementById("practiceAgainButton").addEventListener("click", resetPractice);
   document.getElementById("listenOrderButton").addEventListener("click", () => speakText(getOrderPhrase()));
 }
@@ -367,48 +421,63 @@ function renderComplete() {
 function isStepComplete(step) {
   if (step === 1) return Boolean(state.drinkId);
   if (step === 2) return Boolean(state.drinkId && state.temperature && state.size);
-  if (step === 3) return Boolean(state.drinkId && state.temperature && state.size && state.place && state.payment);
+  if (step === 3) return Boolean(state.drinkId && state.temperature && state.size && state.place);
   if (step === 4) return isStepComplete(3);
   return false;
 }
+
 function updateNextButton() {
   const complete = isStepComplete(state.step);
   refs.nextButton.disabled = !complete;
-  if (!complete) refs.nextButton.setAttribute("aria-describedby", "statusMessage");
-  else refs.nextButton.removeAttribute("aria-describedby");
+
+  if (!complete) {
+    refs.nextButton.setAttribute("aria-describedby", "statusMessage");
+    refs.statusMessage.textContent = incompleteMessages[state.step];
+  } else {
+    refs.nextButton.removeAttribute("aria-describedby");
+    if (!refs.statusMessage.textContent || refs.statusMessage.textContent === incompleteMessages[state.step]) {
+      refs.statusMessage.textContent = state.step === 4 ? "주문이 맞으면 ‘주문 완료하기’를 눌러요." : "선택했어요. 다음 단계로 갈 수 있어요.";
+    }
+  }
 }
+
 function refreshPressedStates(dataAttribute, selectedValue) {
   refs.screenContent.querySelectorAll(`[${dataAttribute}]`).forEach((button) => {
     button.setAttribute("aria-pressed", String(button.getAttribute(dataAttribute) === selectedValue));
   });
 }
+
 function updateSummary() {
   const drink = getDrink();
   const items = [];
+
   if (drink) items.push({ icon: drink.emoji, label: "음료", value: drink.name });
   if (state.temperature) items.push({ icon: temperatureOptions[state.temperature].emoji, label: "온도", value: temperatureOptions[state.temperature].label });
   if (state.size) items.push({ icon: "🥤", label: "크기", value: sizeOptions[state.size].label });
-  if (state.quantity > 1) items.push({ icon: "#️⃣", label: "수량", value: `${state.quantity}잔` });
+  items.push({ icon: "#️⃣", label: "수량", value: `${state.quantity}잔` });
   if (state.place) items.push({ icon: placeOptions[state.place].emoji, label: "이용", value: placeOptions[state.place].label });
-  if (state.payment) items.push({ icon: paymentOptions[state.payment].emoji, label: "결제", value: paymentOptions[state.payment].label });
 
-  if (items.length === 0) {
-    refs.summaryContent.innerHTML = '<p class="summary-empty">선택한 내용이 여기에 차례로 보여요.</p>';
+  if (!drink) {
+    refs.summaryContent.innerHTML = '<p class="summary-empty">고른 내용이 여기에 차례로 보여요.</p>';
     return;
   }
+
   refs.summaryContent.innerHTML = `
     ${items.map((item) => `<div class="summary-item"><span class="summary-item-icon" aria-hidden="true">${item.icon}</span><span><span class="summary-item-label">${item.label}</span><span class="summary-item-value">${item.value}</span></span></div>`).join("")}
-    ${drink ? `<div class="summary-total"><span>현재 금액</span><span>${formatPrice(getTotalPrice())}</span></div>` : ""}`;
+    <div class="summary-total"><span>현재 금액</span><span>${formatPrice(getTotalPrice())}</span></div>`;
 }
+
 function announce(message) {
   refs.statusMessage.textContent = message;
 }
+
 function focusScreenTitle() {
   refs.screenTitle.setAttribute("tabindex", "-1");
   refs.screenTitle.focus({ preventScroll: true });
   refs.screenTitle.addEventListener("blur", () => refs.screenTitle.removeAttribute("tabindex"), { once: true });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
 function resetPractice() {
   state.stage = "welcome";
   state.step = 1;
@@ -417,34 +486,41 @@ function resetPractice() {
   state.size = null;
   state.quantity = 1;
   state.place = null;
-  state.payment = null;
   closeResetModal();
   render();
   focusScreenTitle();
 }
+
 function getSpeechText() {
-  if (state.stage === "welcome") return "카페 주문 연습입니다. 연습 시작하기 버튼을 누르세요. 한 화면에서 한 가지씩 고르면 됩니다.";
-  if (state.stage === "complete") return `주문 연습을 끝냈어요. ${getOrderPhrase()}`;
+  if (state.stage === "welcome") {
+    return "카페 주문 연습입니다. 연습 시작하기 버튼을 누르세요. 음료, 옵션, 매장 또는 포장을 차례로 고른 뒤 주문을 확인합니다.";
+  }
+  if (state.stage === "complete") return `주문이 완료되었어요. ${getOrderPhrase()}`;
+
   const base = `${stepMeta[state.step].title}. ${stepMeta[state.step].help}`;
   if (state.step === 4) return `${base} ${getOrderPhrase()}`;
   return base;
 }
+
 function speakText(text) {
   if (!("speechSynthesis" in window)) {
     announce("이 기기에서는 읽어주기 기능을 사용할 수 없어요.");
     return;
   }
+
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "ko-KR";
   utterance.rate = 0.9;
   window.speechSynthesis.speak(utterance);
 }
+
 function openResetModal() {
   refs.resetModal.hidden = false;
   document.body.style.overflow = "hidden";
   refs.cancelResetButton.focus();
 }
+
 function closeResetModal() {
   refs.resetModal.hidden = true;
   document.body.style.overflow = "";
@@ -452,28 +528,35 @@ function closeResetModal() {
 
 refs.nextButton.addEventListener("click", () => {
   if (!isStepComplete(state.step)) {
-    announce("먼저 화면에서 필요한 항목을 골라 주세요.");
+    announce(incompleteMessages[state.step]);
     return;
   }
+
   if (state.step < 4) {
     state.step += 1;
     render();
     focusScreenTitle();
     return;
   }
+
   state.stage = "complete";
   render();
   focusScreenTitle();
 });
+
 refs.backButton.addEventListener("click", () => {
   if (state.step > 1) state.step -= 1;
   else state.stage = "welcome";
   render();
   focusScreenTitle();
 });
+
 refs.listenButton.addEventListener("click", () => speakText(getSpeechText()));
 refs.resetButton.addEventListener("click", openResetModal);
-refs.cancelResetButton.addEventListener("click", () => { closeResetModal(); refs.resetButton.focus(); });
+refs.cancelResetButton.addEventListener("click", () => {
+  closeResetModal();
+  refs.resetButton.focus();
+});
 refs.confirmResetButton.addEventListener("click", resetPractice);
 refs.resetModal.addEventListener("click", (event) => {
   if (event.target === refs.resetModal) {
@@ -481,11 +564,14 @@ refs.resetModal.addEventListener("click", (event) => {
     refs.resetButton.focus();
   }
 });
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !refs.resetModal.hidden) {
     closeResetModal();
     refs.resetButton.focus();
   }
 });
+
 if (!("speechSynthesis" in window)) refs.listenButton.hidden = true;
+
 render();
